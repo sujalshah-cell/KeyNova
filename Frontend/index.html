@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html
+  lang="en"
+  data-theme="light"
+  data-bg-theme="clean-white"
+  data-font="poppins"
+  data-density="comfortable"
+>
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
+    <meta
+      name="theme-color"
+      content="#ffffff"
+    />
+
+    <meta
+      name="description"
+      content="KeyNova - Improve your typing speed and accuracy."
+    />
+
+    <!-- Open Graph / social sharing -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="KeyNova" />
+    <meta property="og:title" content="KeyNova" />
+    <meta
+      property="og:description"
+      content="KeyNova - Improve your typing speed and accuracy."
+    />
+    <meta property="og:image" content="/keynova-logo-512.png" />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- Favicon / browser icons -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <title>KeyNova</title>
+
+    <!-- Apply saved preferences before the first render -->
+    <script>
+      (function () {
+        try {
+          var prefs = JSON.parse(
+            localStorage.getItem("tf_prefs") || "{}"
+          );
+
+          var html = document.documentElement;
+
+          html.dataset.theme =
+            prefs.dark ? "dark" : "light";
+
+          html.dataset.bgTheme =
+            prefs.backgroundTheme || "clean-white";
+
+          html.dataset.font =
+            prefs.font || "poppins";
+
+          html.dataset.density =
+            prefs.uiDensity || "comfortable";
+
+          html.style.setProperty(
+            "--typing-font-size",
+            (prefs.fontsize || 23) + "px"
+          );
+        } catch (error) {
+          console.error(
+            "Unable to load saved preferences:",
+            error
+          );
+        }
+      })();
+    </script>
+
+    <!-- Google Fonts connection -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+
+    <!-- All fonts used by KeyNova -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Fira+Code:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Lora:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Orbitron:wght@400;500;600;700;800;900&family=Oswald:wght@400;500;600;700&family=Pacifico&family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Press+Start+2P&family=Roboto:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- Splash shown until React mounts (replaced automatically) -->
+      <div
+        style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:'Poppins','Segoe UI',sans-serif;color:#6b7280"
+      >
+        <img
+          src="/keynova-logo-192.png"
+          alt="KeyNova"
+          width="96"
+          height="96"
+          style="border-radius:22px"
+        />
+        <span>Loading KeyNova…</span>
+      </div>
+    </div>
+
+    <script
+      type="module"
+      src="/src/main.jsx"
+    ></script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+# Dependencies
+**/node_modules
+
+# Secrets and environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Git
+.git
+.gitignore
+
+# Logs
+**/*.log
+npm-debug.log*
+
+# Local build artifacts
+Frontend/dist
+Backend/public
+
+# Operating system files
+.DS_Store
+Thumbs.db
