@@ -69,6 +69,38 @@
             "--typing-font-size",
             (prefs.fontsize || 23) + "px"
           );
+
+          // Custom accent colour (same math as applyAccent in utils/prefs.js)
+          if (/^#[0-9a-fA-F]{6}$/.test(prefs.accent || "")) {
+            var n = parseInt(prefs.accent.slice(1), 16);
+            var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+            var mixc = function (t, a) {
+              return "#" + [r, g, b].map(function (v) {
+                return Math.round(v + (t - v) * a).toString(16).padStart(2, "0");
+              }).join("");
+            };
+            var lin = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+            var lum = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+            html.style.setProperty("--accent", prefs.accent);
+            html.style.setProperty("--accent-hover", prefs.dark ? mixc(255, 0.15) : mixc(0, 0.15));
+            html.style.setProperty("--accent-soft", "rgba(" + r + "," + g + "," + b + ",.16)");
+            html.style.setProperty("--accent-ink", lum > 0.5 ? "#1A1409" : "#FFFFFF");
+          }
+
+          // Custom page background colour (same math as applyCustomBg in utils/prefs.js)
+          if (/^#[0-9a-fA-F]{6}$/.test(prefs.customBg || "")) {
+            var m = parseInt(prefs.customBg.slice(1), 16);
+            var R = (m >> 16) & 255, G = (m >> 8) & 255, B = m & 255;
+            var L = function (v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+            var dk = 0.2126 * L(R) + 0.7152 * L(G) + 0.0722 * L(B) < 0.4;
+            var tk = dk
+              ? ["rgba(0,0,0,.28)", "rgba(255,255,255,.06)", "rgba(255,255,255,.07)", "rgba(255,255,255,.11)", "rgba(255,255,255,.14)", "rgba(255,255,255,.24)", "#F1EAD9", "#BDB295", "#8A806B"]
+              : ["rgba(255,255,255,.55)", "rgba(255,255,255,.4)", "rgba(255,255,255,.7)", "rgba(255,255,255,.85)", "rgba(0,0,0,.1)", "rgba(0,0,0,.18)", "#2A241C", "#6F664E", "#9C9378"];
+            var nm = ["--bg", "--bg-soft", "--card", "--card-hover", "--border", "--border-strong", "--text", "--text-muted", "--text-faint"];
+            html.setAttribute("data-custom-bg", dk ? "dark" : "light");
+            html.style.setProperty("--custom-bg", prefs.customBg);
+            for (var i = 0; i < nm.length; i++) html.style.setProperty(nm[i], tk[i]);
+          }
         } catch (error) {
           console.error(
             "Unable to load saved preferences:",

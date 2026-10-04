@@ -141,7 +141,8 @@ router.put('/settings', requireAuth, asyncH(async (req, res) => {
   const allowed = [
     'theme', 'soundEnabled', 'keyboardSounds',
     'backgroundTheme', 'font', 'fontSize', 'uiDensity',
-    'typingEffect', 'caretStyle', 'errorEffect', 'correctEffect', 'wordCompleteEffect'
+    'typingEffect', 'caretStyle', 'errorEffect', 'correctEffect', 'wordCompleteEffect',
+    'accentColor', 'customBackground'
   ];
   const booleans = ['soundEnabled', 'keyboardSounds'];
   const user = req.user;
@@ -153,6 +154,10 @@ router.put('/settings', requireAuth, asyncH(async (req, res) => {
     } else if (key === 'fontSize') {
       if (!Number.isFinite(Number(value)) || Number(value) < 10 || Number(value) > 60) {
         return res.status(400).json({ error: 'fontSize must be a number between 10 and 60' });
+      }
+    } else if (key === 'accentColor' || key === 'customBackground') {
+      if (typeof value !== 'string' || (value !== '' && !/^#[0-9a-fA-F]{6}$/.test(value))) {
+        return res.status(400).json({ error: `${key} must be a #rrggbb color or empty` });
       }
     } else if (typeof value !== 'string' || value.length > 40) {
       return res.status(400).json({ error: `${key} is invalid` });

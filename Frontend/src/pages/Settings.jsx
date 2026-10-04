@@ -17,6 +17,8 @@ import {
   CORRECT_EFFECTS,
   WORD_COMPLETE_EFFECTS,
   FONTS,
+  ACCENT_PRESETS,
+  BG_PRESETS,
 } from '../utils/prefs';
 
 export default function Settings() {
@@ -28,6 +30,7 @@ export default function Settings() {
   const [syncing, setSyncing] = useState(false);
 
   const syncTimer = useRef(null);
+  const pendingRef = useRef(null); // latest prefs waiting for the debounced sync
   const mountedRef = useRef(true);
 
   // ============================================================
@@ -43,6 +46,29 @@ export default function Settings() {
       if (syncTimer.current) {
         clearTimeout(syncTimer.current);
         syncTimer.current = null;
+
+        // Leaving the page before the debounce fired: send the pending
+        // change now so it is not lost (otherwise the older server value
+        // would overwrite it on the next load).
+        if (pendingRef.current) {
+          authService
+            .updateSettings(toBackendSettings(pendingRef.current))
+            .then((updated) =>
+              // keep the cached user in step so the next load does not
+              // restore the old server value over the new local one
+              refreshUser(
+                {
+                  settings:
+                    updated?.settings ??
+                    updated?.user?.settings ??
+                    updated,
+                },
+                { ownSave: true }
+              )
+            )
+            .catch(() => {});
+          pendingRef.current = null;
+        }
       }
     };
   }, []);
@@ -74,8 +100,10 @@ export default function Settings() {
     }
 
     // Debounce backend synchronization.
+    pendingRef.current = next;
     syncTimer.current = setTimeout(() => {
       syncTimer.current = null;
+      pendingRef.current = null;
       syncToBackend(next);
     }, 400);
   };
@@ -96,12 +124,15 @@ export default function Settings() {
 
       if (!mountedRef.current) return;
 
-      refreshUser({
-        settings:
-          updated?.settings ??
-          updated?.user?.settings ??
-          updated,
-      });
+      refreshUser(
+        {
+          settings:
+            updated?.settings ??
+            updated?.user?.settings ??
+            updated,
+        },
+        { ownSave: true }
+      );
     } catch (error) {
       if (!mountedRef.current) return;
 
@@ -199,7 +230,10 @@ export default function Settings() {
             aria-label="Background theme"
           >
             {BACKGROUND_THEMES.map((theme) => {
+              // While a custom colour is active it overrides the theme, so no
+              // theme swatch is shown as selected.
               const selected =
+                !prefs.customBg &&
                 prefs.backgroundTheme === theme.id;
 
               return (
@@ -216,8 +250,11 @@ export default function Settings() {
                     .filter(Boolean)
                     .join(' ')}
                   onClick={() =>
+                    // Picking a theme also drops any custom colour,
+                    // otherwise the custom colour would keep covering it.
                     update({
                       backgroundTheme: theme.id,
+                      customBg: '',
                     })
                   }
                 >
@@ -232,6 +269,94 @@ export default function Settings() {
                 </button>
               );
             })}
+          </div>
+
+          {/* ---------------- Custom background colour ---------------- */}
+
+          <div className="custom-bg-row">
+            <div>
+              <h4>Custom background color</h4>
+              <p>
+                {prefs.customBg
+                  ? 'Custom color is active — click a theme above, or “Use theme”, to switch back.'
+                  : 'Pick any color — it replaces the theme background above.'}
+              </p>
+            </div>
+
+            <div className="accent-controls">
+              {BG_PRESETS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  className={`accent-dot${
+                    prefs.customBg.toLowerCase() === color.toLowerCase() ? ' active' : ''
+                  }`}
+                  style={{ background: color }}
+                  onClick={() => update({ customBg: color })}
+                  aria-label={`Use background color ${color}`}
+                  aria-pressed={prefs.customBg.toLowerCase() === color.toLowerCase()}
+                />
+              ))}
+
+              <input
+                type="color"
+                className="accent-picker"
+                value={prefs.customBg || '#1e1b4b'}
+                onChange={(event) => update({ customBg: event.target.value })}
+                aria-label="Pick a custom background color"
+              />
+
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => update({ customBg: '' })}
+                disabled={!prefs.customBg}
+              >
+                Use theme
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* ---------------- Accent Colour ---------------- */}
+
+        <div className="settings-row">
+          <div>
+            <h4>Accent color</h4>
+            <p>Buttons, highlights and the typing caret.</p>
+          </div>
+
+          <div className="accent-controls">
+            {ACCENT_PRESETS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className={`accent-dot${
+                  prefs.accent.toLowerCase() === color.toLowerCase() ? ' active' : ''
+                }`}
+                style={{ background: color }}
+                onClick={() => update({ accent: color })}
+                aria-label={`Use accent color ${color}`}
+                aria-pressed={prefs.accent.toLowerCase() === color.toLowerCase()}
+              />
+            ))}
+
+            <input
+              type="color"
+              className="accent-picker"
+              value={prefs.accent || (prefs.dark ? '#e08a46' : '#b5652c')}
+              onChange={(event) => update({ accent: event.target.value })}
+              aria-label="Pick a custom accent color"
+            />
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => update({ accent: '' })}
+              disabled={!prefs.accent}
+            >
+              Reset
+            </button>
           </div>
         </div>
 

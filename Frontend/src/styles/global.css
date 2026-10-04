@@ -362,8 +362,8 @@ html[data-bg-theme="cosmic"] .topbar{ background:transparent; border-bottom-colo
 .swatch-deep-ocean .swatch-preview{ background:radial-gradient(circle at 30% 20%,#0E3B5C,#04121F); }
 .swatch-aurora .swatch-preview{ background:linear-gradient(120deg,#0B1E2E,#123A3A,#1B2A4A); }
 .swatch-sunset .swatch-preview{ background:linear-gradient(160deg,#2B1230,#7A3C3C,#E08A46); }
-.swatch-cyber-grid .swatch-preview{ background:#0A0E14 linear-gradient(rgba(90,220,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(90,220,255,.35) 1px,transparent 1px); background-size:8px 8px; }
-.swatch-neon .swatch-preview{ background:#0B0713 radial-gradient(circle at 20% 30%,rgba(255,60,180,.6),transparent 60%),radial-gradient(circle at 80% 70%,rgba(60,200,255,.6),transparent 60%); }
+.swatch-cyber-grid .swatch-preview{ background-color:#0A0E14; background-image:linear-gradient(rgba(90,220,255,.35) 1px,transparent 1px),linear-gradient(90deg,rgba(90,220,255,.35) 1px,transparent 1px); background-size:8px 8px; }
+.swatch-neon .swatch-preview{ background-color:#0B0713; background-image:radial-gradient(circle at 20% 30%,rgba(255,60,180,.6),transparent 60%),radial-gradient(circle at 80% 70%,rgba(60,200,255,.6),transparent 60%); }
 .swatch-minimal-gray .swatch-preview{ background:linear-gradient(180deg,#E9EAEC,#DDDEE2); }
 .swatch-purple-dream .swatch-preview{ background:linear-gradient(150deg,#241238,#5B2E86); }
 .swatch-forest .swatch-preview{ background:linear-gradient(160deg,#0E2016,#1C3B27); }
@@ -518,3 +518,19 @@ a.brand{ color:inherit; text-decoration:none; }
   .topbar{ flex-wrap:wrap; row-gap:10px; padding-left:22px; padding-right:22px; }
   .nav{ order:3; width:100%; overflow-x:auto; flex-wrap:nowrap; -webkit-overflow-scrolling:touch; }
 }
+
+/* ---- Settings: accent colour picker ---- */
+.accent-controls{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+.accent-dot{ width:26px; height:26px; border-radius:50%; border:2px solid var(--card); box-shadow:0 0 0 1px var(--border-strong); padding:0; cursor:pointer; transition:transform .1s ease; }
+.accent-dot:hover{ transform:scale(1.12); }
+.accent-dot.active{ box-shadow:0 0 0 2px var(--text); }
+.accent-picker{ width:36px; height:30px; padding:0; border:1px solid var(--border-strong); border-radius:8px; background:var(--card); cursor:pointer; }
+@media (max-width:700px){ .accent-controls{ justify-content:flex-start; } }
+
+/* ---- Custom page background colour (Settings > Background) ---- */
+.custom-bg-row{ display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; width:100%; margin-top:18px; padding-top:18px; border-top:1px solid var(--border); }
+html[data-custom-bg] body::before{ background:var(--custom-bg) !important; animation:none !important; }
+html[data-custom-bg] .topbar{ background:var(--custom-bg); border-bottom-color:var(--border); }
+html[data-custom-bg] .toast{ background:#222; color:#fff; }
+html[data-custom-bg="dark"] .card{ backdrop-filter:blur(6px); }
+html[data-custom-bg] .brand-name{ color:var(--text); }

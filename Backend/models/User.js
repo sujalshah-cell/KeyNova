@@ -47,6 +47,8 @@ const UserSchema = new mongoose.Schema({
     font: { type: String, default: 'poppins' },
     fontSize: { type: Number, default: 23 },
     uiDensity: { type: String, default: 'comfortable' }, // 'comfortable' | 'compact'
+    accentColor: { type: String, default: '' },          // '#rrggbb' or '' (theme default)
+    customBackground: { type: String, default: '' },     // '#rrggbb' or '' (use background theme)
 
     // --- new: Typing experience ---
     typingEffect: { type: String, default: 'none' },

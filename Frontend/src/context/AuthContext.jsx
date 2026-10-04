@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import * as authService from '../services/authService';
 import { getPrefs, savePrefs, applyPrefsToDocument, fromBackendSettings } from '../utils/prefs';
 
@@ -13,9 +13,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
 
+  // The user object cached in localStorage can be out of date (settings
+  // changed on another device, or just before the page was closed). Settings
+  // from it must NOT overwrite this device's newest local preferences, so we
+  // only fold account settings into local prefs once they have come from the
+  // server in this session (login / register / /auth/me / settings save).
+  const settingsFreshRef = useRef(false);
+
+  // Settings object that came back from this device's OWN save. It is only a
+  // confirmation: this device already shows those choices, and an older reply
+  // arriving late (slow network / remote database) must never repaint the page
+  // with a previous theme or colour. The merge effect skips it.
+  const ownSaveSettingsRef = useRef(null);
+
   const persist = (t, u) => {
     if (t) localStorage.setItem('tf_token', t); else localStorage.removeItem('tf_token');
     if (u) localStorage.setItem('tf_user', JSON.stringify(u)); else localStorage.removeItem('tf_user');
+    settingsFreshRef.current = Boolean(u); // login/register data comes straight from the server
     setToken(t); setUser(u);
   };
 
@@ -28,7 +42,13 @@ export function AuthProvider({ children }) {
       if (!token) { setLoading(false); return; }
       try {
         const freshUser = await authService.fetchMe();
-        if (!cancelled) setUser(freshUser);
+        if (!cancelled) {
+          // Keep the cache in step with the server copy, then allow the
+          // account settings to be merged into local prefs.
+          localStorage.setItem('tf_user', JSON.stringify(freshUser));
+          settingsFreshRef.current = true;
+          setUser(freshUser);
+        }
       } catch (err) {
         // Expired/invalid token -> sign out cleanly instead of showing a
         // half-logged-in state. Network errors keep the cached user.
@@ -47,7 +67,8 @@ export function AuthProvider({ children }) {
   // typing effect, etc.) follows the account across browsers/devices
   // instead of only ever living in this browser's localStorage.
   useEffect(() => {
-    if (!user?.settings) return;
+    if (!user?.settings || !settingsFreshRef.current) return;
+    if (ownSaveSettingsRef.current === user.settings) return;
     const merged = { ...getPrefs(), ...fromBackendSettings(user.settings) };
     savePrefs(merged);
     applyPrefsToDocument(merged);
@@ -87,7 +108,14 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => persist(null, null), []);
 
-  const refreshUser = useCallback((patch) => {
+  // refreshUser(patch, { ownSave: true }) -> the patch is the reply to a settings
+  // save made on this device: keep the cached user in step, but do not merge it
+  // back into the visible preferences.
+  const refreshUser = useCallback((patch, options) => {
+    if (patch && patch.settings) {
+      if (options && options.ownSave) ownSaveSettingsRef.current = patch.settings;
+      else settingsFreshRef.current = true;
+    }
     setUser((prev) => {
       const next = { ...prev, ...patch };
       localStorage.setItem('tf_user', JSON.stringify(next));

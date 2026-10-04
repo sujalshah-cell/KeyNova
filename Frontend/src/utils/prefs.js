@@ -122,7 +122,107 @@ const DEFAULTS = {
 
   font: "poppins",
   uiDensity: "comfortable",
+
+  // Custom accent colour as "#rrggbb". Empty string = use the theme's own accent.
+  accent: "",
+
+  // Custom page background colour "#rrggbb". Empty string = use the chosen background theme.
+  customBg: "",
 };
+
+// Quick-pick background colours shown in Settings.
+export const BG_PRESETS = [
+  "#0F172A", // slate
+  "#1E1B4B", // indigo
+  "#052E16", // deep green
+  "#4C0519", // wine
+  "#FEF3C7", // cream yellow
+  "#E0F2FE", // pale sky
+  "#FCE7F3", // pale pink
+];
+
+// Quick-pick accent colours shown in Settings.
+export const ACCENT_PRESETS = [
+  "#B5652C", // KeyNova orange (default look)
+  "#2B31DE", // blue
+  "#7C3AED", // purple
+  "#0EA5E9", // sky
+  "#16A34A", // green
+  "#DB2777", // pink
+  "#DC2626", // red
+];
+
+// ---- accent helpers -------------------------------------------------------
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function mix([r, g, b], target, amount) {
+  return (
+    "#" +
+    [r, g, b]
+      .map((v) => Math.round(v + (target - v) * amount).toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+function luminance([r, g, b]) {
+  const c = [r, g, b].map((v) => {
+    v /= 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+// Sets (or clears) the four accent CSS variables on <html>.
+// Inline styles beat the theme rules, so this works in light AND dark mode.
+export function applyAccent(hex, dark = false) {
+  const root = document.documentElement.style;
+  const names = ["--accent", "--accent-hover", "--accent-soft", "--accent-ink"];
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex || "")) {
+    names.forEach((n) => root.removeProperty(n));
+    return;
+  }
+  const rgb = hexToRgb(hex);
+  root.setProperty("--accent", hex);
+  root.setProperty("--accent-hover", dark ? mix(rgb, 255, 0.15) : mix(rgb, 0, 0.15));
+  root.setProperty("--accent-soft", `rgba(${rgb[0]},${rgb[1]},${rgb[2]},.16)`);
+  root.setProperty("--accent-ink", luminance(rgb) > 0.5 ? "#1A1409" : "#FFFFFF");
+}
+
+// Page background colour. Sets --custom-bg plus a matching set of text/card
+// tokens so everything stays readable on dark OR light colours.
+const CUSTOM_BG_TOKENS = [
+  "--custom-bg", "--bg", "--bg-soft", "--card", "--card-hover",
+  "--border", "--border-strong", "--text", "--text-muted", "--text-faint",
+];
+
+export function applyCustomBg(hex) {
+  const root = document.documentElement;
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex || "")) {
+    root.removeAttribute("data-custom-bg");
+    CUSTOM_BG_TOKENS.forEach((n) => root.style.removeProperty(n));
+    return;
+  }
+  const dark = luminance(hexToRgb(hex)) < 0.4;
+  const tokens = dark
+    ? {
+        "--bg": "rgba(0,0,0,.28)", "--bg-soft": "rgba(255,255,255,.06)",
+        "--card": "rgba(255,255,255,.07)", "--card-hover": "rgba(255,255,255,.11)",
+        "--border": "rgba(255,255,255,.14)", "--border-strong": "rgba(255,255,255,.24)",
+        "--text": "#F1EAD9", "--text-muted": "#BDB295", "--text-faint": "#8A806B",
+      }
+    : {
+        "--bg": "rgba(255,255,255,.55)", "--bg-soft": "rgba(255,255,255,.4)",
+        "--card": "rgba(255,255,255,.7)", "--card-hover": "rgba(255,255,255,.85)",
+        "--border": "rgba(0,0,0,.1)", "--border-strong": "rgba(0,0,0,.18)",
+        "--text": "#2A241C", "--text-muted": "#6F664E", "--text-faint": "#9C9378",
+      };
+  root.setAttribute("data-custom-bg", dark ? "dark" : "light");
+  root.style.setProperty("--custom-bg", hex);
+  Object.entries(tokens).forEach(([k, v]) => root.style.setProperty(k, v));
+}
 
 // ============================================================
 // VALIDATION HELPERS
@@ -151,6 +251,14 @@ function normalizePrefs(saved = {}) {
     result.font,
     DEFAULTS.font
   );
+
+  result.accent = /^#[0-9a-fA-F]{6}$/.test(result.accent || "")
+    ? result.accent
+    : "";
+
+  result.customBg = /^#[0-9a-fA-F]{6}$/.test(result.customBg || "")
+    ? result.customBg
+    : "";
 
   result.typingEffect = valid(
     TYPING_EFFECTS,
@@ -274,6 +382,9 @@ export function applyPrefsToDocument(prefs = getPrefs()) {
   root.dataset.correctEffect = normalized.correctEffect;
   root.dataset.wordEffect = normalized.wordCompleteEffect;
   root.dataset.caret = normalized.caret;
+
+  applyAccent(normalized.accent, normalized.dark);
+  applyCustomBg(normalized.customBg);
 }
 
 // ============================================================
@@ -316,6 +427,9 @@ export function toBackendSettings(prefs) {
     errorEffect: normalized.errorEffect,
     correctEffect: normalized.correctEffect,
     wordCompleteEffect: normalized.wordCompleteEffect,
+
+    accentColor: normalized.accent,
+    customBackground: normalized.customBg,
   };
 }
 
@@ -347,5 +461,8 @@ export function fromBackendSettings(settings) {
     errorEffect: settings.errorEffect,
     correctEffect: settings.correctEffect,
     wordCompleteEffect: settings.wordCompleteEffect,
+
+    accent: settings.accentColor,
+    customBg: settings.customBackground,
   });
 }
