@@ -195,7 +195,7 @@ attachSockets(io);
 // Start server
 // --------------------------------------------------
 
-const PORT = https://keynova-9jv2.onrender.com;
+const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
   server.listen(PORT, () => {
