@@ -1,8 +1,20 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
 const SocketContext = createContext(null);
+
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL ||
+  'http://localhost:5000';
 
 export function SocketProvider({ children }) {
   const { token } = useAuth();
@@ -17,6 +29,7 @@ export function SocketProvider({ children }) {
     if (!token) {
       if (socketRef.current) {
         console.log('[socket] disconnecting because token is missing');
+
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -26,7 +39,7 @@ export function SocketProvider({ children }) {
       return;
     }
 
-    console.log('[socket] creating connection');
+    console.log('[socket] creating connection:', SOCKET_URL);
 
     // Prevent duplicate connections
     if (socketRef.current) {
@@ -34,14 +47,13 @@ export function SocketProvider({ children }) {
       socketRef.current = null;
     }
 
-    const newSocket = io({
+    const newSocket = io(SOCKET_URL, {
       auth: {
         token,
       },
 
       autoConnect: true,
 
-      // Socket.IO will reconnect automatically
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 500,
@@ -54,29 +66,17 @@ export function SocketProvider({ children }) {
     setSocket(newSocket);
 
     const handleConnect = () => {
-      console.log(
-        '[socket] CONNECTED:',
-        newSocket.id
-      );
-
+      console.log('[socket] CONNECTED:', newSocket.id);
       setConnected(true);
     };
 
     const handleDisconnect = (reason) => {
-      console.log(
-        '[socket] DISCONNECTED:',
-        reason
-      );
-
+      console.log('[socket] DISCONNECTED:', reason);
       setConnected(false);
     };
 
     const handleConnectError = (error) => {
-      console.error(
-        '[socket] CONNECTION ERROR:',
-        error.message
-      );
-
+      console.error('[socket] CONNECTION ERROR:', error.message);
       setConnected(false);
     };
 
